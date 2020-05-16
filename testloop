@@ -1,0 +1,25 @@
+	.data
+a: .word 4
+b: .word 2
+c: .word 3
+
+	.text
+main:
+	lw $t1, a
+	lw $t2, b
+	lw $t3, c
+	
+	slt $t0, $t1, $t2
+	beq $t0, $zero, else
+	lw $t3, b
+	sw $t3, c 
+	j exit
+	
+else:
+	lw $t3, a
+	sw $t3, c
+	
+exit: 
+	li $v0, 10
+	syscall
+	

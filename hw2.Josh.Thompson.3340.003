@@ -1,0 +1,88 @@
+	.data
+buffer: .space 60				#buffer to hold input string
+msg1: .asciiz "Please enter a string." 	#a asciiz variable to prompt user to enter string	
+msgWord: .asciiz " word(s) "
+msgChar: .asciiz " character(s) "
+msgCancel: .asciiz "Cancel was choosen"
+msgNoString: .asciiz "No string was entered" 
+
+
+
+	.text
+main:
+	sw $0, -4($sp)		#initializes stack holding word count to zero
+	sw $0, ($sp)		#initializes stack holding character count to zero
+	
+	la $a0, msg1		#prompts user to enter string
+	la $a1, buffer		#Syscall needs address for buffer. Buffer allocates space for string
+	li $a2, 60		#$a2 sets max number of characters to read.
+	li $v0, 54		#syscakk 54 "input dialog string"
+	syscall
+	
+	la $s0, buffer		#this stores input string from buffer into $s registers
+	beq $a1, -2, cancel
+	beq $a1, -3, noString
+	bnez $s0, inspect	#if does not equal zero > inspect string
+				#if doesn equal zero is null and terminates
+	j exit
+
+inspect: 
+	lb $t0, ($s0)
+	beq $t0, 10, countComplete
+	
+	lw $v0, ($sp)
+	addi $v0, $v0, 1
+	sw $v0, ($sp)
+	addi $s0, $s0, 1
+	
+	beq $t0, 32, wordCount
+	j inspect
+	
+wordCount:
+	lw $v1, -4($sp)
+	addi $v1, $v1, 1
+	sw $v1, -4($sp)
+	j inspect
+	
+countComplete:
+	la $a0, buffer
+	li $v0, 4
+	syscall 
+	lw $t0, -4($sp)		#adds 1 to word count
+	addi $t0, $t0, 1	#inaccurate method if double spaces or space at end/beginning of sentence
+	la $a0, ($t0)		#outputs number of words counter
+	li $v0, 1		#count based on spaces. Does not handle cases of double spaces
+	syscall
+	la $a0, msgWord		#outputs the word word
+	li $v0, 4
+	syscall
+	lw $a0, ($sp)		#outputs number of characters counted
+	li $v0,1 
+	syscall			#outputs word character
+	la $a0, msgChar
+	li $v0, 4
+	syscall
+	
+	li $a0, 0
+	li $v0, 4
+	syscall 
+	
+	j main
+	
+cancel:
+	la $a0, msgCancel		#$a0 hold message. Cancel message
+	li $a1, 1			#$a1 holds type of message. 1 is an information msg
+	li $v0, 55
+	syscall
+	j exit
+	
+noString:				#if not string is entered
+	la $a0, msgNoString		# $a0 hold message to output. no string entered message
+	li $a1, 0			# $a1 holds type of message. 0 is a warning
+	li $v0, 55
+	syscall
+	j exit
+	
+exit:
+	li $v0, 10
+	syscall
